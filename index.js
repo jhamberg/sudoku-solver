@@ -2,7 +2,7 @@ const { Seq, Set, Repeat, Range } = require("immutable");
 
 const initial = Repeat(
     // Every cell can have values 1-9
-    Set(Range(1, 10)), 
+    Range(1, 10).toSet(), 
     // Board dimensions are 9x9
     9 * 9
 );
@@ -26,13 +26,23 @@ const sudoku = Seq([
 const colCoords = (pos) => (
     // Column coordinates belong to the residue class mod 9
     Range(0, 9)
-        .map(n => 9*n + (9 % pos))
+        .map(n => 9*n + (pos % 9))
+        .toSet()
 )
 
 const rowCoords = (pos) => (
     // Row coordinates are a range multiplied by 9
     Range(0, 9)
         .map(n => n + Math.floor(pos / 9) * 9)
+        .toSet()
+);
+
+const invalidCoords = (pos) => (
+    Set.union([
+        rowCoords(pos),
+        colCoords(pos),
+        // blockCoords(pos)
+    ])
 );
 
 const isFound = (value) => (
@@ -44,8 +54,6 @@ sudoku
     .map((value, pos) => {
         console.log(`at ${pos}`);
         if (isFound(value)) {
-            console.log(value);
-            console.log(`removing ${value} from col coords: ${colCoords(pos).toArray()}`)
-            console.log(`removing ${value} from row coords: ${rowCoords(pos).toArray()}`)
+            console.log(`removing value ${value} from coords ${invalidCoords(pos)}`);
         }
     }).toJS(); // Collect
