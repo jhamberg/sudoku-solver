@@ -1,4 +1,4 @@
-const { Seq, Set, Range } = require("immutable");
+const { Seq, Set, Range, Map } = require("immutable");
 
 const input = Seq([
     ...
@@ -51,6 +51,30 @@ const invalidCoords = (pos) => (
     ]).delete(pos)
 );
 
+function markNew(board) {
+    return subGridValues.reduce((board, indices, subGrid) => {
+        const xyz = indices
+            // Find values for this shape
+            .map(idx => board.get(idx))
+            // Create pair for each possible value in cell
+            .flatMap((values, cell) => values.map(val => [cell, val]))
+            // Group possible values per cell index
+            .groupBy(([_, val]) => val)
+            // Dispose the indices used to group
+            .map(val => val.map(x => x[0]))
+            // Find outliers
+            .filter(val => val.count() === 1)
+            // Unwrap the array
+            .map(val => val.first());
+        // Update board
+        return xyz.reduce((result, offset, num) => {
+            // Fix me
+            const idx = Math.floor(subGrid/3) * 27 + Math.floor(offset/3) * 9 + (subGrid % 3) * 3 + (offset % 3);
+            return result.set(idx, Set.of(num));
+        }, board);
+    }, board);
+}
+
 function solve(board = initial) {
     // console.log(board);
     const temp = board.reduce((nextState, values, pos) => {
@@ -59,7 +83,8 @@ function solve(board = initial) {
             res.update(coord, cell => cell.delete(values.first()))
         ), nextState);
     }, board);
-    console.log(temp.toJS());
+    const asd = markNew(temp);
+    console.log(asd.toJS());
 }
 
 solve(initial);
