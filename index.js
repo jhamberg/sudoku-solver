@@ -6,7 +6,7 @@ const input = Seq([
     "080" + "007" + "090" +
     "602" + "000" + "500" +
 
-    "070" + "060" + "000" +
+    "070"+  "060" + "000" +
     "000" + "901" + "000" +
     "000" + "020" + "040" +
 
@@ -19,6 +19,16 @@ const initial = input
     .map(value => parseInt(value))
     .map(value => value ? Set.of(value) : Range(1, 10).toSet())
     .toMap();
+
+// 1) Find the row by diving with 9 and then the subgrid row by divding with 3. 
+// 2) Find the column by modulo 9 and then the subgrid column by dividing with 3.
+// 3) Assign indices 0 to 8 to subgrids with the formula 3r + c.
+const subGrids = initial
+    .map((_, index) => 3 * Math.floor(index / 27) + Math.floor((index % 9) / 3))
+
+const subGridLookup = subGrids
+    .groupBy(val => val)
+    .map(val => val.keySeq());
 
 const colCoords = (pos) => (
     // Column coordinates belong to the residue class mod 9
@@ -34,27 +44,18 @@ const rowCoords = (pos) => (
         .toSet()
 );
 
-const subGridCoords = (pos) => {
-    const subGridRow = Math.floor(pos / 27)
-    const subGridColumn = Math.floor((pos % 9) / 3);
-    return Seq([0, 1, 2, 9, 10, 11, 18, 19, 20])
-        .map(x => x + (subGridRow * 27) + (subGridColumn * 3))
-        .toSet();
-}
-
 const invalidCoords = (pos) => (
     Set.union([
         rowCoords(pos),
         colCoords(pos),
-        subGridCoords(pos)
+        subGridLookup.get(subGrids.get(pos))
     ]).delete(pos)
 );
 
 function solve(board = initial) {
-    console.log(board);
+    // console.log(board);
     const temp = board.reduce((nextState, values, pos) => {
         if (values.count() > 1) return nextState;
-
         return invalidCoords(pos).reduce((res, coord) => (
             res.update(coord, cell => cell.delete(values.first()))
         ), nextState);
