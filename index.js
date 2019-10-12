@@ -1,13 +1,6 @@
 const { Seq, Set, Repeat, Range } = require("immutable");
 
-const initial = Repeat(
-    // Every cell can have values 1-9
-    Range(1, 10).toSet(), 
-    // Board dimensions are 9x9
-    9 * 9
-).toMap();
-
-const sudoku = Seq([
+const input = Seq([
     ...
     "000" + "000" + "200" +
     "080" + "007" + "090" +
@@ -22,6 +15,10 @@ const sudoku = Seq([
     "006" + "000" + "000"
 ]);
 
+const initial = input
+    .map(value => parseInt(value))
+    .map(value => value || Range(1, 10).toSet())
+    .toMap();
 
 const colCoords = (pos) => (
     // Column coordinates belong to the residue class mod 9
@@ -53,23 +50,36 @@ const invalidCoords = (pos) => (
     ])
 );
 
-const isFound = (value) => (
+/* const isFound = (value) => (
     value !== 0
-);
+); */
 
-let result = initial;
+function solve(board = initial) {
+    board.map((value, pos) => {
+        if (!isNaN(value)) {
+            console.log(`${value} at ${pos}`);
+        }
+    }).toJS()
+}
+
+solve(initial);
+
+//const initial = sudoku
+
+/*let result = initial;
 sudoku
     .map(x => parseInt(x))
     .map((value, pos) => {
-        console.log(`at ${pos}`);
+        // console.log(`at ${pos}`);
         if (isFound(value)) {
-            console.log(`removing value ${value} from coords ${invalidCoords(pos)}`);
+            // console.log(`removing value ${value} from coords ${invalidCoords(pos)}`);
             result = invalidCoords(pos).reduce((res, curr) => (
                 res.update(curr, candidates => candidates.delete(value))
             ), result);
             
+            // Cycle 1-9 through every row, column and subgrid, find if can place any
             result.map((cell, index) => {
-                console.log(`${index}: ${cell.toJS()}`);
+               //console.log(`${index}: ${cell.toJS()}`);
             }).toJS();
         }
-    }).toJS(); // Collect
+    }).toJS(); // Collect*/
