@@ -17,7 +17,7 @@ const input = Seq([
 
 const initial = input
     .map(value => parseInt(value))
-    .map(value => value || Range(1, 10).toSet())
+    .map(value => value ? Set.of(value) : Range(1, 10).toSet())
     .toMap();
 
 const colCoords = (pos) => (
@@ -47,39 +47,19 @@ const invalidCoords = (pos) => (
         rowCoords(pos),
         colCoords(pos),
         subGridCoords(pos)
-    ])
+    ]).delete(pos)
 );
 
-/* const isFound = (value) => (
-    value !== 0
-); */
-
 function solve(board = initial) {
-    board.map((value, pos) => {
-        if (!isNaN(value)) {
-            console.log(`${value} at ${pos}`);
-        }
-    }).toJS()
+    console.log(board);
+    const temp = board.reduce((nextState, values, pos) => {
+        if (values.count() > 1) return nextState;
+
+        return invalidCoords(pos).reduce((res, coord) => (
+            res.update(coord, cell => cell.delete(values.first()))
+        ), nextState);
+    }, board);
+    console.log(temp.toJS());
 }
 
 solve(initial);
-
-//const initial = sudoku
-
-/*let result = initial;
-sudoku
-    .map(x => parseInt(x))
-    .map((value, pos) => {
-        // console.log(`at ${pos}`);
-        if (isFound(value)) {
-            // console.log(`removing value ${value} from coords ${invalidCoords(pos)}`);
-            result = invalidCoords(pos).reduce((res, curr) => (
-                res.update(curr, candidates => candidates.delete(value))
-            ), result);
-            
-            // Cycle 1-9 through every row, column and subgrid, find if can place any
-            result.map((cell, index) => {
-               //console.log(`${index}: ${cell.toJS()}`);
-            }).toJS();
-        }
-    }).toJS(); // Collect*/
