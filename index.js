@@ -22,11 +22,30 @@ const sudoku = Seq([
     "006" + "000" + "000"
 ]);
 
+
+const colCoords = (pos) => (
+    // Column coordinates belong to the residue class mod 9
+    Range(0, 9)
+        .map(n => 9*n + (9 % pos))
+)
+
+const rowCoords = (pos) => (
+    // Row coordinates are a range multiplied by 9
+    Range(0, 9)
+        .map(n => n + Math.floor(pos / 9) * 9)
+);
+
+const isFound = (value) => (
+    value !== 0
+);
+
 sudoku
     .map(x => parseInt(x))
     .map((value, pos) => {
         console.log(`at ${pos}`);
-        if (value !== 0) {
+        if (isFound(value)) {
             console.log(value);
+            console.log(`removing ${value} from col coords: ${colCoords(pos).toArray()}`)
+            console.log(`removing ${value} from row coords: ${rowCoords(pos).toArray()}`)
         }
     }).toJS(); // Collect
