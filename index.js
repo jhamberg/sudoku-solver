@@ -5,7 +5,7 @@ const initial = Repeat(
     Range(1, 10).toSet(), 
     // Board dimensions are 9x9
     9 * 9
-);
+).toMap();
 
 const sudoku = Seq([
     ...
@@ -26,7 +26,7 @@ const sudoku = Seq([
 const colCoords = (pos) => (
     // Column coordinates belong to the residue class mod 9
     Range(0, 9)
-        .map(n => 9*n + (pos % 9))
+        .map(n => 9 * n + (pos % 9))
         .toSet()
 )
 
@@ -49,11 +49,20 @@ const isFound = (value) => (
     value !== 0
 );
 
+let result = initial;
 sudoku
     .map(x => parseInt(x))
     .map((value, pos) => {
         console.log(`at ${pos}`);
         if (isFound(value)) {
             console.log(`removing value ${value} from coords ${invalidCoords(pos)}`);
+            console.log(initial.keySeq().toJS())
+            result = invalidCoords(pos).reduce((res, curr) => (
+                res.update(curr, candidates => candidates.delete(value))
+            ), result);
+            
+            result.map((cell, index) => {
+                console.log(`${index}: ${cell.toJS()}`);
+            }).toJS();
         }
     }).toJS(); // Collect
