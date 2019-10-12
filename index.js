@@ -37,11 +37,19 @@ const rowCoords = (pos) => (
         .toSet()
 );
 
+const subGridCoords = (pos) => {
+    const subGridRow = Math.floor(pos / 27)
+    const subGridColumn = Math.floor((pos % 9) / 3);
+    return Seq([0, 1, 2, 9, 10, 11, 18, 19, 20])
+        .map(x => x + (subGridRow * 27) + (subGridColumn * 3))
+        .toSet();
+}
+
 const invalidCoords = (pos) => (
     Set.union([
         rowCoords(pos),
         colCoords(pos),
-        // blockCoords(pos)
+        subGridCoords(pos)
     ])
 );
 
@@ -56,7 +64,6 @@ sudoku
         console.log(`at ${pos}`);
         if (isFound(value)) {
             console.log(`removing value ${value} from coords ${invalidCoords(pos)}`);
-            console.log(initial.keySeq().toJS())
             result = invalidCoords(pos).reduce((res, curr) => (
                 res.update(curr, candidates => candidates.delete(value))
             ), result);
