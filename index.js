@@ -1,4 +1,4 @@
-const { Seq, Set, Repeat, Range } = require("immutable");
+const { Seq, Set, Range } = require("immutable");
 
 const input = Seq([
     ...
@@ -23,32 +23,31 @@ const initial = input
 // 1) Find the row by diving with 9 and then the subgrid row by divding with 3. 
 // 2) Find the column by modulo 9 and then the subgrid column by dividing with 3.
 // 3) Assign indices 0 to 8 to subgrids with the formula 3r + c.
-const subGrids = initial
+const subGridIndices = initial
     .map((_, index) => 3 * Math.floor(index / 27) + Math.floor((index % 9) / 3))
 
-const subGridLookup = subGrids
+const subGridValues = subGridIndices
     .groupBy(val => val)
     .map(val => val.keySeq());
 
-const colCoords = (pos) => (
-    // Column coordinates belong to the residue class mod 9
-    Range(0, 9)
-        .map(n => 9 * n + (pos % 9))
-        .toSet()
-)
+const columnIndices =
+    initial.map((_, index) => index % 9);
+const rowIndices =
+    initial.map((_, index) => Math.floor(index / 9));
 
-const rowCoords = (pos) => (
-    // Row coordinates are a range multiplied by 9
-    Range(0, 9)
-        .map(n => n + Math.floor(pos / 9) * 9)
-        .toSet()
-);
+const columnValues = columnIndices
+    .groupBy(val => val)
+    .map(val => val.keySeq());
+
+const rowValues = rowIndices
+    .groupBy(val => val)
+    .map(val => val.keySeq());
 
 const invalidCoords = (pos) => (
     Set.union([
-        rowCoords(pos),
-        colCoords(pos),
-        subGridLookup.get(subGrids.get(pos))
+        rowValues.get(rowIndices.get(pos)),
+        columnValues.get(columnIndices.get(pos)),
+        subGridValues.get(subGridIndices.get(pos))
     ]).delete(pos)
 );
 
