@@ -1,12 +1,13 @@
-const { Set, List, Range, Map } = require("immutable");
+const { Seq, Set, Repeat, Range } = require("immutable");
 
-const initial = List()
-    // Sudoku board size is 9x9
-    .setSize(9 * 9)
-    // Each cell can contain numbers 1-9
-    .map(() => Set(Range(1, 10)));
+const initial = Repeat(
+    // Every cell can have values 1-9
+    Set(Range(1, 10)), 
+    // Board dimensions are 9x9
+    9 * 9
+);
 
-const sudoku = List([
+const sudoku = Seq([
     ...
     "000" + "000" + "200" +
     "080" + "007" + "090" +
@@ -22,7 +23,10 @@ const sudoku = List([
 ]);
 
 sudoku
+    .map(x => parseInt(x))
     .map((value, pos) => {
         console.log(`at ${pos}`);
-        
-    });
+        if (value !== 0) {
+            console.log(value);
+        }
+    }).toJS(); // Collect
