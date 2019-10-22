@@ -1,4 +1,4 @@
-const { Seq, Set, Range, Map } = require("immutable");
+const { Seq, Set, Range, Map, merge } = require("immutable");
 
 const input = Seq([
     ...
@@ -15,9 +15,11 @@ const input = Seq([
     "006" + "000" + "000"
 ]);
 
+const allowedValues = Range(1, 10).toSet();
+
 const initial = input
     .map(value => parseInt(value))
-    .map(value => value ? Set.of(value) : Range(1, 10).toSet())
+    .map(value => value ? Set.of(value) : allowedValues)
     .toMap();
 
 // 1) Find the row by diving with 9 and then the subgrid row by divding with 3. 
@@ -32,6 +34,7 @@ const subGridValues = subGridIndices
 
 const columnIndices =
     initial.map((_, index) => index % 9);
+
 const rowIndices =
     initial.map((_, index) => Math.floor(index / 9));
 
@@ -51,40 +54,49 @@ const invalidCoords = (pos) => (
     ]).delete(pos)
 );
 
+const subset = (board, indices) => (
+    // This feels more idiomatic than a reduce approach
+    Map(indices.map(index => [index, board.get(index)]))
+);
+
+const groupByValue = (subGrid) => (
+    // This is likely not optimal at all
+    Map(allowedValues.map(value => (
+        [value, subGrid.filter(values => values.contains(value)).keySeq()]
+    )))
+);
+
+const findKnownValues = board => cells => (
+    groupByValue(subset(board, cells))
+            // Find cells that can only have one value
+            // Unwrap it from the array
+            // Swap the map to be indexed by cell
+            .filter(indices => indices.size === 1)
+            .map(([value]) => value)
+            .mapEntries(([key, value]) => {
+                //console.log(`${key} to ${value}`);
+                return [value, key];
+            })
+)
+
 function markNew(board) {
-    return subGridValues.reduce((board, indices, subGrid) => {
-        const xyz = indices
-            // Find values for this shape
-            .map(idx => board.get(idx))
-            // Create pair for each possible value in cell
-            .flatMap((values, cell) => values.map(val => [cell, val]))
-            // Group possible values per cell index
-            .groupBy(([_, val]) => val)
-            // Dispose the indices used to group
-            .map(val => val.map(x => x[0]))
-            // Find outliers
-            .filter(val => val.count() === 1)
-            // Unwrap the array
-            .map(val => val.first());
-        // Update board
-        return xyz.reduce((result, offset, num) => {
-            // Fix me
-            const idx = Math.floor(subGrid/3) * 27 + Math.floor(offset/3) * 9 + (subGrid % 3) * 3 + (offset % 3);
-            return result.set(idx, Set.of(num));
-        }, board);
+    return [subGridValues, columnValues, rowValues].reduce((res, values) => (
+        res.merge(values.flatMap(findKnownValues(board)))
+    ), Map())
+    .reduce((result, knownValue, key) => result.set(key, Set.of(knownValue)), board);
+}
+
+function removeImpossible(board) {
+    return board.reduce((result, values, pos) => {
+        if (values.count() > 1) return result;
+        return invalidCoords(pos).reduce((res, coord) => (
+            res.update(coord, cell => cell.delete(values.first()))
+        ), result);
     }, board);
 }
 
 function solve(board = initial) {
-    // console.log(board);
-    const temp = board.reduce((nextState, values, pos) => {
-        if (values.count() > 1) return nextState;
-        return invalidCoords(pos).reduce((res, coord) => (
-            res.update(coord, cell => cell.delete(values.first()))
-        ), nextState);
-    }, board);
-    const asd = markNew(temp);
-    console.log(asd.toJS());
+    return markNew(removeImpossible(board));
 }
 
-solve(initial);
+console.log(solve().toJS())
