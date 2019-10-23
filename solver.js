@@ -1,4 +1,4 @@
-const { Set, Range, Repeat } = require("immutable"); 
+const { Map, Set, Range, Repeat, List } = require("immutable"); 
 const { invert, updateAll } = require("./utils");
 
  // TODO: Delete me
@@ -6,8 +6,8 @@ const { initial } = require("./index");
 
 const SIZE = 9 * 9;
 const INDICES = Range(0, SIZE);
-const INITIAL_CELL = Range(1, 10).toSet();
-const INITIAL_BOARD = Repeat(INITIAL_CELL, SIZE).toMap();
+const CANDIDATES = Range(1, 10).toSet();
+const INITIAL_BOARD = Repeat(CANDIDATES, SIZE).toMap();
 const ROW_INDICES = INDICES.map(idx => Math.floor(idx / 9));
 const COLUMN_INDICES = INDICES.map(idx => idx % 9);
 const SUBGRID_INDICES = INDICES.map(idx => 3 * Math.floor(idx / 27) + Math.floor((idx % 9) / 3));
@@ -28,7 +28,7 @@ function eraseImpossible(board) {
             ROW_CELLS.get(ROW_INDICES.get(index)),
             COLUMN_CELLS.get(COLUMN_INDICES.get(index)),
             SUBGRID_CELLS.get(SUBGRID_INDICES.get(index))
-        ]).delete(index);
+        ]);
 
         // Exclude the original cell
         const cells = subset.delete(index);
@@ -38,8 +38,34 @@ function eraseImpossible(board) {
     }, board);
 }
 
-function findSingletons(board) {
-    return board;
+
+function groupByValue(groupIndices, board) {
+    const cells = Map(groupIndices.map(cell => [cell, board.get(cell)]));
+    const pairs = CANDIDATES.map(value => {
+        const indices = cells.filter(candidates => candidates.contains(value));
+        return [value, indices.keySeq()];
+    });
+    return Map(pairs);
+}
+
+function findSingletons(group, board) {
+    return group.flatMap(indices => (
+        groupByValue(indices, board)
+            .filter(indices => indices.size === 1)
+            .map(items => items.first())
+            .flip()
+    ));
+}
+
+function updateSingletons(board) {
+    const rowSingletons = findSingletons(ROW_CELLS, board);
+    const columnSingletons = findSingletons(COLUMN_CELLS, board);
+    const subgridSingletons = findSingletons(SUBGRID_CELLS, board);
+
+    return rowSingletons
+        .merge(columnSingletons)
+        .merge(subgridSingletons)
+        .reduce((board, value, key) => board.set(key, Set.of(value)), board);
 }
 
 function isInvalid(board) {
@@ -62,7 +88,7 @@ function makeGuesses(board) {
 
 function solve(board) {
     const reduced = eraseImpossible(board);
-    const updated = findSingletons(reduced);
+    const updated = updateSingletons(reduced);
 
     // Invalid backtracking branch
     if (isInvalid(updated)) {
