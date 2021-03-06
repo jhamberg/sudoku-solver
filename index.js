@@ -15,9 +15,39 @@ const input = Seq([
     "006" + "000" + "000"
 ]);
 
+const hardest = Seq([
+    ...
+    "800" + "000" + "000" +
+    "003" + "600" + "000" +
+    "070" + "090" + "200" +
+
+    "050" + "007" + "000" +
+    "000" + "045" + "700" +
+    "000" + "100" + "030" +
+
+    "001" + "000" + "068" +
+    "008" + "500" + "010" +
+    "090" + "000" + "400"
+]);
+
+const harder = Seq([
+    ...
+    "000" + "700" + "000" +
+    "100" + "000" + "000" +
+    "000" + "430" + "200" +
+
+    "000" + "000" + "006" + 
+    "000" + "509" + "000" +
+    "000" + "000" + "418" +
+
+    "000" + "081" + "000" +
+    "002" + "000" + "050" +
+    "040" + "000" + "300"
+]);
+
 const allowedValues = Range(1, 10).toSet();
 
-const initial = input
+const initial = harder
     .map(value => parseInt(value))
     .map(value => value ? Set.of(value) : allowedValues)
     .toMap();
@@ -86,7 +116,7 @@ function markNew(board) {
     .reduce((result, knownValue, key) => result.set(key, Set.of(knownValue)), board);
 }
 
-function removeImpossible(board) {
+function eliminateImpossible(board) {
     return board.reduce((result, values, pos) => {
         if (values.count() > 1) return result;
         return invalidCoords(pos).reduce((res, coord) => (
@@ -96,7 +126,22 @@ function removeImpossible(board) {
 }
 
 function solve(board = initial) {
-    return markNew(removeImpossible(board));
+    const updated = markNew(eliminateImpossible(board));
+    if (updated.equals(board)) {
+        const [index, values] = updated
+            .sortBy(candidates => candidates.size)
+            .filter(candidates => candidates.size > 1)
+            .entrySeq()
+            .first();
+        values.forEach(value => {
+            console.log(`Going in to solve with assumption ${index} is ${value}`);
+            solve(board.set(index, Set.of(value)))
+        });
+    }
+    //console.log(updated.toJS())
+    return updated;
 }
 
-console.log(solve().toJS())
+// solve(solve(solve(solve(solve()))));
+
+module.exports = { initial };
